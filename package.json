@@ -1,0 +1,23 @@
+{
+  "name": "genvy",
+  "version": "1.0.0",
+  "description": "Generate .env files from JSON templates.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/safrankamate/genvy.git"
+  },
+  "author": {
+    "name": "Mate Safranka",
+    "email": "safranka.mate@gmail.com",
+    "url": "https://github.com/safrankamate"
+  },
+  "license": "MIT",
+  "keywords": [
+    "json",
+    "env"
+  ],
+  "scripts": {
+    "build": "tsc --outDir dist -d --declarationDir types -t esnext -m commonjs src/index.ts"
+  },
+  "bin": "dist/cli.js"
+}
