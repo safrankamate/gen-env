@@ -1,6 +1,6 @@
 {
   "name": "genvy",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Generate .env files from JSON templates.",
   "repository": {
     "type": "git",
@@ -19,6 +19,7 @@
   "scripts": {
     "build": "tsc"
   },
+  "main": "dist/cli.js",
   "bin": "dist/cli.js",
   "devDependencies": {
     "@types/node": "^14.0.14"
