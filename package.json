@@ -17,7 +17,7 @@
     "env"
   ],
   "scripts": {
-    "build": "tsc --outDir dist -d --declarationDir types -t esnext -m commonjs src/index.ts"
+    "build": "tsc"
   },
   "bin": "dist/cli.js",
   "devDependencies": {

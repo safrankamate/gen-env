@@ -1,0 +1,12 @@
+{
+  "files": ["src/cli.ts"],
+  "compilerOptions": {
+    "allowJs": true,
+    "esModuleInterop": true,
+    "outDir": "dist",
+    "declaration": true,
+    "declarationDir": "types",
+    "target": "esnext",
+    "module": "commonjs"
+  }
+}
