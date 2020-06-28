@@ -1,3 +1,6 @@
+**Note: This package is currently under development. Please check back shortly;**
+**this message will be removed once the package is considered stable.**
+
 # genvy
 
 Generate .env files from JSON templates.
