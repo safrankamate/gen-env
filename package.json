@@ -19,5 +19,8 @@
   "scripts": {
     "build": "tsc --outDir dist -d --declarationDir types -t esnext -m commonjs src/index.ts"
   },
-  "bin": "dist/cli.js"
+  "bin": "dist/cli.js",
+  "devDependencies": {
+    "@types/node": "^14.0.14"
+  }
 }
