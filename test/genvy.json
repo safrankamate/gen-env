@@ -1,0 +1,22 @@
+{
+  "environments": ["dev", "prod"],
+  "files": {
+    "backend": {
+      "source": "backend.env.json",
+      "target": "backend.env"
+    },
+    "sql": {
+      "source": "sql.env.json",
+      "target": "sql.env"
+    }
+  },
+  "values": {
+    "db.user": "admin",
+    "db.pass": {
+      "if_env": {
+        "dev": "guest",
+        "prod": { "secret": 32 }
+      }
+    }
+  }
+}

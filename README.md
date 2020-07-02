@@ -6,6 +6,7 @@ Generate .env files from JSON templates.
 2. [Configuration Reference](#configuration-reference)
 3. [Template Reference](#template-reference)
 4. [Value Reference](#value-reference)
+5. [Secrets File Reference](#secrets-file-reference)
 
 # Example Walkthrough
 
@@ -113,8 +114,9 @@ genvy.json
 Let's break this down.
 
 - Each configuration file MUST contain a **`files`** block.
-- The keys of this block can be arbitrary identifiers. It's recommended to pick
-  ones that reflect the purpose of the `.env` file.
+- The keys of this block can be arbitrary identifiers. These are the
+  **template names**.
+  It's recommended to pick ones that reflect the purpose of the `.env` file.
 - Each key within the `files` block MUST hold an object, which in turn MUST
   contain a `source` and a `target` key.
 - The `source` key should hold a path to a file that will be used as the
@@ -386,6 +388,15 @@ backend/env.json
 Besides specifying the length, you can use a few other properties to control
 the generated password. These can be found in the
 [Value Reference](#value-reference).
+
+You will also notice that, if you use secrets in your configuration or template
+files, Genvy will also create a file named `.genvy.secrets` in the same folder
+as the configuration file. This file contains all the generated secrets, so that
+on subsequent runs (for example, if you expand your app and add a new service
+that needs to use one of the existing secrets) it won't generate a new one.
+
+**You SHOULD add `genvy.secrets` to your `.gitignore`.**
+[Read more about the secrets file here.](#secrets-file-reference)
 
 [Back to Example Walkthrough](#example-walkthrough) - [Back to top](#genvy)
 
@@ -705,3 +716,174 @@ environments both refer to the named value `default-password`, which itself
 has different values for both environments.
 
 [Back to Value Reference](#value-reference) - [Back to top](#genvy)
+
+# Secrets File Reference
+
+If you use generated secrets in your configuration or template files, Genvy
+will create a file named `.genvy.secrets` in the same folder as your
+`genvy.json`, and store the generated secrets in it. On subsequent runs,
+when it encounters a variable that should be resolved to a generated secret,
+it will first check the secrets file if one already exists. If it does,
+then Genvy will use the stored secret; if not, it will generate a new one
+and store it in the file.
+
+**You SHOULD NOT commit `.genvy.secrets`. You SHOULD add it to `.gitignore`.**
+
+You can also safely edit the secrets file yourself; for example, to add API
+keys. Its contents are in JSON like any of the other files. The keys are
+composed like so:
+
+**For secrets defined in the configuration file:**
+
+```
+<value name>::<environment>
+```
+
+**For secrets defined in a template file:**
+
+```
+<template name>::<variable name>::<environment>
+```
+
+Below are some examples to clarify.
+
+## Example 1
+
+```json
+genvy.json
+
+{
+  "environments": [ "dev", "prod" ],
+  "files": {
+    "nodejs": {
+      "source": "backend/env.json",
+      "target": "backend/.env"
+    }
+  },
+  "values": {
+    "db.pass": {
+      "if_env": {
+        "dev": "guest",
+        "prod": { "secret": 32 }
+      }
+    }
+  }
+}
+```
+
+```json
+backend/env.json
+
+{
+  "db_user": "admin",
+  "db_password": { "value": "db.pass" },
+
+  "cookie_secret": {
+    "if_env": {
+      "dev": "TopSecretCookie",
+      "prod": { "secret": 24 }
+    }
+  }
+}
+```
+
+After running `genvy dev`, `.genvy.secrets` will be created; however, it
+will just be an empty object (`{}`), since we didn't define any generated
+secrets in our `dev` environment.
+
+If now we run `genvy prod`, the file will look something like this:
+
+```json
+{
+  "db.pass::prod": "abcd1234abcd1234abcd1234abcd1234",
+  "nodejs::cookie_secret::prod": "xyz567xyz567xyz567xyz567"
+}
+```
+
+## Example 2: No environments
+
+If you haven't defined an `environments` block in your configuration,
+the environment part of the key will be empty.
+
+```json
+genvy.json
+
+{
+  "files": {
+    "nodejs": {
+      "source": "backend/env.json",
+      "target": "backend/.env"
+    }
+  },
+  "values": {
+    "db.pass": { "secret": 32 }
+  }
+}
+```
+
+```json
+backend/env.json
+
+{
+  "db_user": "admin",
+  "db_password": { "value": "db.pass" },
+  "cookie_secret": { "secret": 24 }
+}
+```
+
+```json
+.genvy.secrets
+
+{
+  "db.pass::": "abcd1234abcd1234abcd1234abcd1234",
+  "nodejs::cookie_secret::": "xyz567xyz567xyz567xyz567"
+}
+```
+
+## Example 3: Editing the secrets file
+
+Let's say that our backend container uses a 3rd party API that requires an
+API key. We'd like to include this API key in the `.env` file, but we'd
+rather not include it in the template JSON, since that gets committed to
+our repository.
+
+In this case, we can define our template like this:
+
+```json
+backend/env.json
+
+{
+  "cookie_secret": {
+    "if_env": {
+      "dev": "TopSecretCookie",
+      "prod": { "secret": 24 }
+    }
+  },
+  "api_key": { "secret": 0 }
+}
+```
+
+_Note: Specifying 0 for the length isn't necessary, but it can be a good_
+_way of signaling to yourself or collaborators that this secret isn't expected_
+_to be generated._
+
+Then, before running Genvy for the first time, we can create
+`.genvy.secrets` ourselves, with the following content:
+
+```json
+{
+  "nodejs::api_key::dev": "ApiKeyReceivedFrom3rdPartyForDevelopment",
+  "nodejs::api_key::prod": "ApiKeyReceivedFrom3rdPartyForProduction"
+}
+```
+
+Now, when we run Genvy, it will copy the API key from the secrets file,
+and generate all the other ones from scratch:
+
+```json
+{
+  "nodejs::api_key::dev": "ApiKeyReceivedFrom3rdPartyForDevelopment",
+  "nodejs::api_key::prod": "ApiKeyReceivedFrom3rdPartyForProduction",
+  "nodejs::cookie_secret::prod": "xyz567xyz567xyz567xyz567"
+}
+```
